@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Freshwater Fishing Log</title>
+
+  <!-- React + Babel loaded from CDN — no install needed -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    /* ============================================================
+       FISHING LOG — Styles
+    ============================================================ */
+    :root {
+      --primary:        #1a6b3c;
+      --primary-hover:  #155730;
+      --primary-light:  #2d9b5c;
+      --accent:         #4a9e7f;
+      --bg:             #f2f8f5;
+      --card:           #ffffff;
+      --text:           #1a2f23;
+      --text-muted:     #5a7a66;
+      --border:         #cde4d8;
+      --caught-bg:      #e6f7ed;
+      --radius:         10px;
+      --shadow:         0 2px 8px rgba(0,0,0,0.07);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    button  { cursor: pointer; font-family: inherit; }
+    input, select, textarea { font-family: inherit; }
+
+    /* App shell */
+    .app { max-width: 680px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* Header */
+    .app-header { background: var(--primary); color: white; padding: 14px 20px; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+    .app-header-inner { display: flex; align-items: center; gap: 10px; }
+    .app-logo  { font-size: 24px; }
+    .app-title { font-size: 20px; font-weight: 700; }
+
+    /* Nav */
+    .nav { display: flex; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 53px; z-index: 9; }
+    .nav-btn { flex: 1; background: none; border: none; padding: 10px 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--text-muted); font-size: 11px; font-weight: 500; transition: color 0.15s, background 0.15s; border-bottom: 3px solid transparent; }
+    .nav-btn:hover { background: var(--bg); color: var(--primary); }
+    .nav-btn.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 700; }
+    .nav-icon  { font-size: 18px; }
+    .nav-label { font-size: 10px; }
+
+    /* Main */
+    .main-content { flex: 1; padding: 20px 16px 40px; }
+
+    /* Page */
+    .page { display: flex; flex-direction: column; gap: 20px; }
+    .page-title { font-size: 22px; font-weight: 700; color: var(--primary); display: flex; align-items: baseline; gap: 10px; }
+    .page-title-count { font-size: 14px; font-weight: 400; color: var(--text-muted); }
+
+    /* Section */
+    .section { display: flex; flex-direction: column; gap: 12px; }
+    .section-title { font-size: 17px; font-weight: 700; color: var(--text); }
+
+    /* Card */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+
+    /* Hero */
+    .hero { background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%); color: white; border-radius: 14px; padding: 32px 20px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .hero-emoji  { font-size: 48px; }
+    .hero-title  { font-size: 26px; font-weight: 800; }
+    .hero-subtitle { font-size: 15px; opacity: 0.9; max-width: 280px; }
+
+    /* Stats */
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 8px; text-align: center; display: flex; flex-direction: column; gap: 4px; box-shadow: var(--shadow); }
+    .stat-number { font-size: 32px; font-weight: 800; color: var(--primary); line-height: 1; }
+    .stat-label  { font-size: 11px; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* Progress */
+    .progress-header { display: flex; justify-content: space-between; font-size: 14px; color: var(--text-muted); margin-bottom: 8px; }
+    .progress-percent { font-weight: 700; color: var(--primary); }
+    .progress-track { height: 12px; background: var(--bg); border-radius: 99px; overflow: hidden; border: 1px solid var(--border); }
+    .progress-fill  { height: 100%; background: linear-gradient(90deg, var(--primary), var(--primary-light)); border-radius: 99px; transition: width 0.5s ease; min-width: 4px; }
+
+    /* Catches */
+    .catch-list { display: flex; flex-direction: column; gap: 8px; }
+    .catch-item { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+    .catch-item:hover { background: var(--caught-bg); border-color: var(--primary-light); }
+    .catch-item.no-click { cursor: default; }
+    .catch-item.no-click:hover { background: var(--card); border-color: var(--border); }
+    .catch-emoji { font-size: 24px; flex-shrink: 0; }
+    .catch-info  { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+    .catch-info strong { font-size: 15px; }
+    .catch-meta  { font-size: 13px; color: var(--text-muted); }
+    .catch-notes { font-size: 13px; color: var(--text-muted); font-style: italic; }
+    .catch-arrow { font-size: 20px; color: #8aab97; }
+
+    /* Fish grid */
+    .fish-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .fish-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 12px; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s; display: flex; flex-direction: column; gap: 8px; box-shadow: var(--shadow); }
+    .fish-card:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.1); border-color: var(--accent); }
+    .fish-card.caught   { border-left: 4px solid var(--primary-light); }
+    .fish-card.uncaught { opacity: 0.72; }
+    .fish-card-emoji    { font-size: 32px; text-align: center; }
+    .fish-card-name     { font-size: 14px; font-weight: 700; }
+    .fish-card-sci      { font-size: 11px; color: var(--text-muted); font-style: italic; }
+    .fish-card-footer   { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+
+    /* Badges */
+    .badge { font-size: 11px; font-weight: 600; color: white; padding: 2px 8px; border-radius: 99px; }
+    .badge.caught-badge   { background: var(--primary-light); }
+    .badge.uncaught-badge { background: #d0ddd5; color: #5a7a66; }
+
+    /* Fish detail */
+    .detail-header   { display: flex; align-items: center; gap: 16px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+    .detail-emoji    { font-size: 52px; }
+    .detail-name     { font-size: 22px; font-weight: 800; color: var(--primary); }
+    .detail-sci      { font-size: 13px; color: var(--text-muted); font-style: italic; margin-bottom: 6px; }
+    .info-grid       { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .info-item       { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; }
+    .info-label      { display: block; font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .info-value      { font-size: 14px; font-weight: 600; }
+    .tips-card       { background: #fffbea; border-color: #f0d060; }
+    .tips-title      { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+
+    /* Form */
+    .catch-form { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; display: flex; flex-direction: column; gap: 16px; box-shadow: var(--shadow); }
+    .form-group { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+    .form-row   { display: flex; gap: 12px; }
+    .form-label { font-size: 14px; font-weight: 600; }
+    .required   { color: #e05252; }
+    .form-input { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 15px; color: var(--text); background: var(--bg); transition: border-color 0.15s, box-shadow 0.15s; width: 100%; }
+    .form-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,107,60,0.12); background: white; }
+    .form-textarea { resize: vertical; min-height: 90px; }
+
+    /* Buttons */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 11px 20px; border-radius: 8px; font-size: 15px; font-weight: 600; border: none; transition: background 0.15s, transform 0.1s; }
+    .btn:active { transform: scale(0.98); }
+    .btn.primary   { background: var(--primary); color: white; }
+    .btn.primary:hover { background: var(--primary-hover); }
+    .btn.secondary { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+    .btn.secondary:hover { background: var(--caught-bg); }
+    .btn.ghost     { background: transparent; color: var(--text-muted); padding: 8px 0; }
+    .btn.ghost:hover { color: var(--primary); }
+    .btn.full      { width: 100%; }
+
+    /* Success */
+    .success-screen { text-align: center; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .success-emoji  { font-size: 64px; }
+    .success-screen h2 { font-size: 26px; font-weight: 800; color: var(--primary); }
+    .success-screen p  { color: var(--text-muted); }
+    .success-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 280px; margin-top: 12px; }
+
+    /* Empty state */
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); background: var(--card); border: 1px dashed var(--border); border-radius: var(--radius); display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // ============================================================
+    // FISH DATA — edit this array to add your own fish!
+    // ============================================================
+    const fishData = [
+      {
+        id: 1,
+        name: "Largemouth Bass",
+        scientificName: "Micropterus salmoides",
+        emoji: "🐟",
+        description: "The largemouth bass is the most popular freshwater game fish in North America. Known for explosive strikes and acrobatic jumps, it lives in warm, vegetated water.",
+        habitat: "Lakes, ponds, reservoirs, slow rivers with weeds and structure",
+        avgWeight: "1 – 5 lbs",
+        record: "22 lbs 4 oz",
+        difficulty: "Beginner",
+        tips: "Fish plastic worms, crankbaits, or topwater lures near weed edges. Best bite is early morning and evening. Target shaded areas in summer.",
+      },
+      {
+        id: 2,
+        name: "Smallmouth Bass",
+        scientificName: "Micropterus dolomieu",
+        emoji: "🐟",
+        description: "Pound for pound one of the hardest-fighting freshwater fish. Prefers cooler, clearer water than largemouth and puts up a fierce battle.",
+        habitat: "Clear rocky lakes, cool rivers and streams",
+        avgWeight: "1 – 3 lbs",
+        record: "11 lbs 15 oz",
+        difficulty: "Intermediate",
+        tips: "Use crawfish-colored jigs, tubes, or drop-shots near rocky points and current breaks. They fight harder than largemouth of the same size.",
+      },
+      {
+        id: 3,
+        name: "Bluegill",
+        scientificName: "Lepomis macrochirus",
+        emoji: "🐠",
+        description: "A sunfish species and a staple of freshwater fishing. Easy to catch and perfect for beginners. Great panfish for the dinner table.",
+        habitat: "Ponds, lakes, slow rivers with weeds and woody cover",
+        avgWeight: "0.5 – 1 lb",
+        record: "4 lbs 12 oz",
+        difficulty: "Beginner",
+        tips: "Small hooks with worms or crickets under a bobber work great. Look for them near docks, fallen trees, and weed edges.",
+      },
+      {
+        id: 4,
+        name: "Channel Catfish",
+        scientificName: "Ictalurus punctatus",
+        emoji: "🐡",
+        description: "The most widely distributed catfish in North America. Bottom feeders with a strong sense of smell — they find food more by scent than sight.",
+        habitat: "Rivers, lakes, reservoirs, deep pools with sandy or muddy bottoms",
+        avgWeight: "2 – 10 lbs",
+        record: "58 lbs",
+        difficulty: "Beginner",
+        tips: "Use stink bait, chicken liver, or nightcrawlers on the bottom near channels and deep holes. Night fishing is especially productive.",
+      },
+      {
+        id: 5,
+        name: "Rainbow Trout",
+        scientificName: "Oncorhynchus mykiss",
+        emoji: "🐠",
+        description: "One of the most beautiful freshwater fish with its pink stripe and spotted sides. Prefers cold, well-oxygenated water and is a prized sport fish.",
+        habitat: "Cold mountain streams, rivers, and stocked lakes",
+        avgWeight: "1 – 3 lbs",
+        record: "48 lbs",
+        difficulty: "Intermediate",
+        tips: "Use small spinners, spoons, PowerBait, or fly patterns. Fish pools and runs in streams. In lakes, troll near the surface early morning.",
+      },
+      {
+        id: 6,
+        name: "Walleye",
+        scientificName: "Sander vitreus",
+        emoji: "🐟",
+        description: "Prized for its exceptional table fare, walleye have large glassy eyes adapted for low-light feeding. Elusive but rewarding to catch.",
+        habitat: "Large clear lakes and rivers with rocky or gravel bottoms",
+        avgWeight: "1 – 5 lbs",
+        record: "25 lbs",
+        difficulty: "Advanced",
+        tips: "Fish at dusk and dawn near rocky points and drop-offs. Jig-and-minnow combos or live bait rigs near the bottom are highly effective.",
+      },
+      {
+        id: 7,
+        name: "Northern Pike",
+        scientificName: "Esox lucius",
+        emoji: "🐟",
+        description: "An apex predator with razor-sharp teeth and lightning reflexes. Pike will eat almost anything and put up an aggressive, powerful fight.",
+        habitat: "Weedy bays of lakes, slow rivers, marshy areas",
+        avgWeight: "3 – 10 lbs",
+        record: "55 lbs 1 oz",
+        difficulty: "Intermediate",
+        tips: "Use large spoons, spinnerbaits, or live baitfish near weed beds. Always use a wire leader — pike teeth will cut through monofilament instantly.",
+      },
+      {
+        id: 8,
+        name: "Black Crappie",
+        scientificName: "Pomoxis nigromaculatus",
+        emoji: "🐠",
+        description: "A beloved panfish known for schooling behavior and delicious white flesh. Crappie are fun on light tackle and great for beginner anglers.",
+        habitat: "Lakes, reservoirs, ponds with clear water and structure",
+        avgWeight: "0.5 – 1 lb",
+        record: "5 lbs",
+        difficulty: "Beginner",
+        tips: "Small jigs or minnows under a bobber near submerged brush piles and docks. They school, so where you catch one you'll catch many.",
+      },
+      {
+        id: 9,
+        name: "Yellow Perch",
+        scientificName: "Perca flavescens",
+        emoji: "🐠",
+        description: "One of the most popular panfish in the northern US and Canada. Prized for their taste and active feeding in schools.",
+        habitat: "Lakes and slow rivers, often in schools near vegetation",
+        avgWeight: "0.25 – 0.75 lbs",
+        record: "4 lbs 3 oz",
+        difficulty: "Beginner",
+        tips: "Small jigs, minnows, or worm pieces on a light rod. Great for ice fishing and open water. Schools can be found suspended mid-depth.",
+      },
+      {
+        id: 10,
+        name: "Common Carp",
+        scientificName: "Cyprinus carpio",
+        emoji: "🐡",
+        description: "A large, powerful fish often overlooked by American anglers but beloved worldwide. Known for their strength — a 20-lb carp will test any angler.",
+        habitat: "Lakes, ponds, slow rivers with soft muddy bottoms",
+        avgWeight: "5 – 20 lbs",
+        record: "105 lbs 14 oz",
+        difficulty: "Intermediate",
+        tips: "Use corn, dough balls, or boilies near the bottom in calm shallow bays. Fish on light line — carp are easily spooked by heavy tackle.",
+      },
+      {
+        id: 11,
+        name: "Brook Trout",
+        scientificName: "Salvelinus fontinalis",
+        emoji: "🐠",
+        description: "Arguably the most beautiful freshwater fish in North America. Stunning red spots on a dark green background. An indicator of pristine water quality.",
+        habitat: "Cold, clear mountain streams and spring-fed ponds",
+        avgWeight: "0.5 – 2 lbs",
+        record: "14 lbs 8 oz",
+        difficulty: "Intermediate",
+        tips: "Small spinners, dry flies, or worms in cold fast-moving streams. They spook easily — approach quietly and cast upstream.",
+      },
+      {
+        id: 12,
+        name: "Muskellunge",
+        scientificName: "Esox masquinongy",
+        emoji: "🐟",
+        description: "The fish of 10,000 casts. The largest member of the pike family is the ultimate freshwater trophy fish — rare, powerful, and unforgettable.",
+        habitat: "Large clear lakes and rivers, often near weed edges and drop-offs",
+        avgWeight: "10 – 30 lbs",
+        record: "67 lbs 8 oz",
+        difficulty: "Expert",
+        tips: "Large glide baits, bucktails, and swimbaits retrieved slowly near structure. Patience is key — musky fishing is a long game. Always use a heavy leader.",
+      },
+    ];
+
+    // ============================================================
+    // DIFFICULTY BADGE COLORS
+    // ============================================================
+    const difficultyColor = {
+      Beginner:     '#2d9b5c',
+      Intermediate: '#e6a817',
+      Advanced:     '#e07b39',
+      Expert:       '#c0392b',
+    };
+
+    // ============================================================
+    // NAV
+    // ============================================================
+    function Nav({ page, navigate }) {
+      const items = [
+        { id: 'home',       label: 'Home',      icon: '🏠' },
+        { id: 'collection', label: 'Collection', icon: '📖' },
+        { id: 'log-catch',  label: 'Log Catch',  icon: '➕' },
+        { id: 'history',    label: 'History',    icon: '📋' },
+      ];
+      return (
+        <nav className="nav">
+          {items.map(item => (
+            <button
+              key={item.id}
+              className={`nav-btn ${page === item.id ? 'active' : ''}`}
+              onClick={() => navigate(item.id)}
+            >
+              <span className="nav-icon">{item.icon}</span>
+              <span className="nav-label">{item.label}</span>
+            </button>
+          ))}
+        </nav>
+      );
+    }
+
+    // ============================================================
+    // HOME PAGE
+    // ============================================================
+    function HomePage({ catches, caughtSpeciesIds, navigate }) {
+      const total        = fishData.length;
+      const caught       = caughtSpeciesIds.length;
+      const pct          = Math.round((caught / total) * 100);
+      const recent       = catches.slice(0, 3);
+
+      return (
+        <div className="page">
+          {/* Hero */}
+          <section className="hero">
+            <div className="hero-emoji">🎣</div>
+            <h2 className="hero-title">Your Fishing Log</h2>
+            <p className="hero-subtitle">Track every catch, build your collection, and level up your fishing.</p>
+            <button className="btn primary" onClick={() => navigate('log-catch')}>+ Log a Catch</button>
+          </section>
+
+          {/* Stats */}
+          <section className="section">
+            <h3 className="section-title">Your Stats</h3>
+            <div className="stats-grid">
+              <div className="stat-card">
+                <span className="stat-number">{catches.length}</span>
+                <span className="stat-label">Total Catches</span>
+              </div>
+              <div className="stat-card">
+                <span className="stat-number">{caught}</span>
+                <span className="stat-label">Species Caught</span>
+              </div>
+              <div className="stat-card">
+                <span className="stat-number">{total - caught}</span>
+                <span className="stat-label">Species Left</span>
+              </div>
+            </div>
+          </section>
+
+          {/* Progress */}
+          <section className="section">
+            <h3 className="section-title">Collection Progress</h3>
+            <div className="card">
+              <div className="progress-header">
+                <span>{caught} of {total} species caught</span>
+                <span className="progress-percent">{pct}%</span>
+              </div>
+              <div className="progress-track">
+                <div className="progress-fill" style={{ width: pct + '%' }} />
+              </div>
+              <button className="btn secondary" style={{ marginTop: '12px' }} onClick={() => navigate('collection')}>
+                View Collection →
+              </button>
+            </div>
+          </section>
+
+          {/* Recent Catches */}
+          <section className="section">
+            <h3 className="section-title">Recent Catches</h3>
+            {recent.length === 0 ? (
+              <div className="empty-state">
+                <p>No catches yet. Time to hit the water! 🌊</p>
+              </div>
+            ) : (
+              <div className="catch-list">
+                {recent.map(c => (
+                  <div key={c.id} className="catch-item" onClick={() => navigate('fish-detail', c.fishId)}>
+                    <span className="catch-emoji">🐟</span>
+                    <div className="catch-info">
+                      <strong>{c.fishName}</strong>
+                      <span className="catch-meta">
+                        {c.date}{c.weight ? ' · ' + c.weight + ' lbs' : ''}{c.location ? ' · ' + c.location : ''}
+                      </span>
+                    </div>
+                    <span className="catch-arrow">›</span>
+                  </div>
+                ))}
+                {catches.length > 3 && (
+                  <button className="btn secondary" onClick={() => navigate('history')}>View All Catches →</button>
+                )}
+              </div>
+            )}
+          </section>
+        </div>
+      );
+    }
+
+    // ============================================================
+    // COLLECTION PAGE
+    // ============================================================
+    function CollectionPage({ caughtSpeciesIds, navigate }) {
+      const total = fishData.length;
+      const caught = caughtSpeciesIds.length;
+      const pct = Math.round((caught / total) * 100);
+
+      return (
+        <div className="page">
+          <h2 className="page-title">Fish Collection</h2>
+
+          <div className="card">
+            <div className="progress-header">
+              <span>{caught} of {total} species caught</span>
+              <span className="progress-percent">{pct}%</span>
+            </div>
+            <div className="progress-track">
+              <div className="progress-fill" style={{ width: pct + '%' }} />
+            </div>
+          </div>
+
+          <div className="fish-grid">
+            {fishData.map(fish => {
+              const isCaught = caughtSpeciesIds.includes(fish.id);
+              return (
+                <div
+                  key={fish.id}
+                  className={`fish-card ${isCaught ? 'caught' : 'uncaught'}`}
+                  onClick={() => navigate('fish-detail', fish.id)}
+                >
+                  <div className="fish-card-emoji">{fish.emoji}</div>
+                  <div>
+                    <div className="fish-card-name">{fish.name}</div>
+                    <div className="fish-card-sci">{fish.scientificName}</div>
+                  </div>
+                  <div className="fish-card-footer">
+                    <span className="badge" style={{ background: difficultyColor[fish.difficulty] || '#888' }}>
+                      {fish.difficulty}
+                    </span>
+                    {isCaught
+                      ? <span className="badge caught-badge">✓ Caught</span>
+                      : <span className="badge uncaught-badge">Not Caught</span>
+                    }
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    // ============================================================
+    // FISH DETAIL PAGE
+    // ============================================================
+    function FishDetailPage({ fishId, catches, navigate }) {
+      const fish = fishData.find(f => f.id === fishId);
+      if (!fish) return (
+        <div className="page">
+          <button className="btn ghost" onClick={() => navigate('collection')}>← Back</button>
+          <p>Fish not found.</p>
+        </div>
+      );
+
+      const fishCatches = catches.filter(c => c.fishId === fishId);
+      const isCaught    = fishCatches.length > 0;
+      const bestCatch   = fishCatches.reduce((best, c) => {
+        if (!c.weight) return best;
+        return !best || parseFloat(c.weight) > parseFloat(best.weight) ? c : best;
+      }, null);
+
+      return (
+        <div className="page">
+          <button className="btn ghost" onClick={() => navigate('collection')}>← Back to Collection</button>
+
+          {/* Header */}
+          <div className="detail-header">
+            <div className="detail-emoji">{fish.emoji}</div>
+            <div>
+              <div className="detail-name">{fish.name}</div>
+              <div className="detail-sci">{fish.scientificName}</div>
+              {isCaught
+                ? <span className="badge caught-badge">✓ Caught</span>
+                : <span className="badge uncaught-badge">Not Caught Yet</span>
+              }
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="card"><p>{fish.description}</p></div>
+
+          {/* Info grid */}
+          <div className="info-grid">
+            <div className="info-item">
+              <span className="info-label">Habitat</span>
+              <span className="info-value">{fish.habitat}</span>
+            </div>
+            <div className="info-item">
+              <span className="info-label">Avg Weight</span>
+              <span className="info-value">{fish.avgWeight}</span>
+            </div>
+            <div className="info-item">
+              <span className="info-label">World Record</span>
+              <span className="info-value">{fish.record}</span>
+            </div>
+            <div className="info-item">
+              <span className="info-label">Difficulty</span>
+              <span className="info-value">{fish.difficulty}</span>
+            </div>
+          </div>
+
+          {/* Tips */}
+          <div className="card tips-card">
+            <div className="tips-title">💡 Fishing Tips</div>
+            <p>{fish.tips}</p>
+          </div>
+
+          {/* Personal best */}
+          {bestCatch && (
+            <div className="card">
+              <div className="tips-title">🏆 Your Personal Best</div>
+              <p>
+                <strong>{bestCatch.weight} lbs</strong>
+                {bestCatch.length ? ' · ' + bestCatch.length + '"' : ''}
+                {bestCatch.date ? ' · ' + bestCatch.date : ''}
+                {bestCatch.location ? ' · ' + bestCatch.location : ''}
+              </p>
+            </div>
+          )}
+
+          {/* Log catch button */}
+          <button className="btn primary full" onClick={() => navigate('log-catch', fish.id)}>
+            + Log a {fish.name} Catch
+          </button>
+
+          {/* Catch history for this fish */}
+          {fishCatches.length > 0 && (
+            <div className="section">
+              <h3 className="section-title">Your Catches ({fishCatches.length})</h3>
+              <div className="catch-list">
+                {fishCatches.map(c => (
+                  <div key={c.id} className="catch-item no-click">
+                    <span className="catch-emoji">🐟</span>
+                    <div className="catch-info">
+                      <strong>{c.date}</strong>
+                      <span className="catch-meta">
+                        {c.weight ? c.weight + ' lbs' : ''}
+                        {c.length ? ' · ' + c.length + '"' : ''}
+                        {c.location ? ' · ' + c.location : ''}
+                      </span>
+                      {c.notes && <span className="catch-notes">"{c.notes}"</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ============================================================
+    // LOG CATCH PAGE
+    // ============================================================
+    function LogCatchPage({ addCatch, navigate, preselectedFishId }) {
+      const today = new Date().toISOString().split('T')[0];
+
+      const [fishId,   setFishId]   = useState(preselectedFishId || '');
+      const [date,     setDate]     = useState(today);
+      const [weight,   setWeight]   = useState('');
+      const [length,   setLength]   = useState('');
+      const [location, setLocation] = useState('');
+      const [notes,    setNotes]    = useState('');
+      const [done,     setDone]     = useState(false);
+
+      function handleSubmit(e) {
+        e.preventDefault();
+        if (!fishId) { alert('Please select a fish species.'); return; }
+        const fish = fishData.find(f => f.id === parseInt(fishId));
+        addCatch({ fishId: fish.id, fishName: fish.name, date, weight, length, location, notes });
+        setDone(true);
+      }
+
+      if (done) {
+        return (
+          <div className="page">
+            <div className="success-screen">
+              <div className="success-emoji">🎉</div>
+              <h2>Catch Logged!</h2>
+              <p>Nice work! Your catch has been saved.</p>
+              <div className="success-actions">
+                <button className="btn primary" onClick={() => navigate('log-catch', null)}>Log Another</button>
+                <button className="btn secondary" onClick={() => navigate('history')}>View History</button>
+                <button className="btn ghost" onClick={() => navigate('home')}>Go Home</button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="page">
+          <h2 className="page-title">Log a Catch</h2>
+          <form className="catch-form" onSubmit={handleSubmit}>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="fish-select">
+                Fish Species <span className="required">*</span>
+              </label>
+              <select id="fish-select" className="form-input" value={fishId} onChange={e => setFishId(e.target.value)} required>
+                <option value="">— Select a fish —</option>
+                {fishData.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="catch-date">
+                Date <span className="required">*</span>
+              </label>
+              <input id="catch-date" type="date" className="form-input" value={date} onChange={e => setDate(e.target.value)} required />
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label" htmlFor="catch-weight">Weight (lbs)</label>
+                <input id="catch-weight" type="number" className="form-input" placeholder="e.g. 2.5" min="0" step="0.1" value={weight} onChange={e => setWeight(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label className="form-label" htmlFor="catch-length">Length (inches)</label>
+                <input id="catch-length" type="number" className="form-input" placeholder="e.g. 14" min="0" step="0.5" value={length} onChange={e => setLength(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="catch-location">Location</label>
+              <input id="catch-location" type="text" className="form-input" placeholder="e.g. Lake Minnetonka, MN" value={location} onChange={e => setLocation(e.target.value)} />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="catch-notes">Notes</label>
+              <textarea id="catch-notes" className="form-input form-textarea" placeholder="What lure? Water conditions? Any story worth remembering?" value={notes} onChange={e => setNotes(e.target.value)} />
+            </div>
+
+            <button type="submit" className="btn primary full">Save Catch 🎣</button>
+          </form>
+        </div>
+      );
+    }
+
+    // ============================================================
+    // CATCH HISTORY PAGE
+    // ============================================================
+    function CatchHistoryPage({ catches, navigate }) {
+      if (catches.length === 0) {
+        return (
+          <div className="page">
+            <h2 className="page-title">Catch History</h2>
+            <div className="empty-state">
+              <div style={{ fontSize: '48px' }}>🎣</div>
+              <p>No catches logged yet.</p>
+              <button className="btn primary" onClick={() => navigate('log-catch')}>Log Your First Catch</button>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="page">
+          <h2 className="page-title">
+            Catch History
+            <span className="page-title-count">{catches.length} total</span>
+          </h2>
+          <div className="catch-list">
+            {catches.map(c => (
+              <div key={c.id} className="catch-item" onClick={() => navigate('fish-detail', c.fishId)}>
+                <span className="catch-emoji">🐟</span>
+                <div className="catch-info">
+                  <strong>{c.fishName}</strong>
+                  <span className="catch-meta">
+                    {c.date}
+                    {c.weight ? ' · ' + c.weight + ' lbs' : ''}
+                    {c.length ? ' · ' + c.length + '"' : ''}
+                    {c.location ? ' · ' + c.location : ''}
+                  </span>
+                  {c.notes && <span className="catch-notes">"{c.notes}"</span>}
+                </div>
+                <span className="catch-arrow">›</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // ============================================================
+    // APP — main state lives here
+    // ============================================================
+    function App() {
+      const [catches, setCatches] = useState(() => {
+        try {
+          const saved = localStorage.getItem('fishingLog_catches');
+          return saved ? JSON.parse(saved) : [];
+        } catch { return []; }
+      });
+
+      const [page,           setPage]           = useState('home');
+      const [selectedFishId, setSelectedFishId] = useState(null);
+
+      useEffect(() => {
+        localStorage.setItem('fishingLog_catches', JSON.stringify(catches));
+      }, [catches]);
+
+      function addCatch(entry) {
+        setCatches(prev => [{ ...entry, id: Date.now() }, ...prev]);
+      }
+
+      function navigate(targetPage, fishId = null) {
+        setSelectedFishId(fishId);
+        setPage(targetPage);
+        window.scrollTo(0, 0);
+      }
+
+      const caughtSpeciesIds = [...new Set(catches.map(c => c.fishId))];
+
+      return (
+        <div className="app">
+          <header className="app-header">
+            <div className="app-header-inner">
+              <span className="app-logo">🎣</span>
+              <h1 className="app-title">Fishing Log</h1>
+            </div>
+          </header>
+
+          <Nav page={page} navigate={navigate} />
+
+          <main className="main-content">
+            {page === 'home'        && <HomePage        catches={catches} caughtSpeciesIds={caughtSpeciesIds} navigate={navigate} />}
+            {page === 'collection'  && <CollectionPage  caughtSpeciesIds={caughtSpeciesIds} navigate={navigate} />}
+            {page === 'fish-detail' && <FishDetailPage  fishId={selectedFishId} catches={catches} navigate={navigate} />}
+            {page === 'log-catch'   && <LogCatchPage    addCatch={addCatch} navigate={navigate} preselectedFishId={selectedFishId} />}
+            {page === 'history'     && <CatchHistoryPage catches={catches} navigate={navigate} />}
+          </main>
+        </div>
+      );
+    }
+
+    // Mount the app
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
